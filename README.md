@@ -1,12 +1,18 @@
 # FinFlow
 
-Personal finance dashboard with NLU-first inputs, deliberate data-dense UI, and modern full-stack TypeScript.
+Personal finance dashboard with Indonesian NLU-first transaction parsing, deliberate data-dense UI, and real-time calculation engines.
+
+## Features
+- **Natural Language Transaction Parsing:** Shorthand Indonesian parsing (`kopi 22rb gopay`, `bonus 500rb bca`, `listrik 150rb`).
+- **Financial Calculation Engine:** Automated computation for Net Worth, monthly totals, category breakdown, runway months, and savings rate.
+- **Strict Anti-AI-Slop UI:** Warm editorial palette, tabular figures (`font-variant-numeric: tabular-nums`), quiet panels, and content-first typography.
+- **Database Ready:** Drizzle ORM schema with Zod type-safe validations for transactions, accounts, and budgets.
 
 ## Stack & Architecture
 - **Framework:** Next.js 16 (App Router) + React 19 + TypeScript
-- **Styling:** Tailwind CSS v4 with Warm Editorial / Financial Calm tokens
-- **Test Runner:** Vitest with unit tests for currency and IDR shorthand parsing
-- **Design Philosophy:** Strict Anti-AI-Slop compliance (no generic purple gradients, no fake metrics, no emoji icons, tabular figures for finance accuracy)
+- **Styling:** Tailwind CSS v4 with Warm Editorial tokens
+- **ORM / Schemas:** Drizzle ORM + SQLite + Zod
+- **Test Runner:** Vitest with comprehensive test coverage for engine calculations and NLU parser
 
 ## Getting Started
 
