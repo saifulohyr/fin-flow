@@ -14,6 +14,9 @@ Personal finance dashboard with Indonesian NLU-first transaction parsing, delibe
 - **ORM / Schemas:** Drizzle ORM + SQLite + Zod
 - **Test Runner:** Vitest with comprehensive test coverage for engine calculations and NLU parser
 
+## Deployment
+Live production URL: [https://fin-flow-nine-lovat.vercel.app](https://fin-flow-nine-lovat.vercel.app) (Hosted on Vercel)
+
 ## Getting Started
 
 ```bash
