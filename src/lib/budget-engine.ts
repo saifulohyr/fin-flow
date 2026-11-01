@@ -37,9 +37,7 @@ function getPeriodDateRange(budget: BudgetInput): { start: string; end: string }
   const day = parseInt(dayStr, 10);
 
   if (budget.period === "weekly") {
-    const start = new Date(year, month - 1, day);
-    const end = new Date(start);
-    end.setDate(start.getDate() + 6);
+    const end = new Date(Date.UTC(year, month - 1, day + 6));
     return {
       start: budget.startDate,
       end: end.toISOString().slice(0, 10),
@@ -54,7 +52,7 @@ function getPeriodDateRange(budget: BudgetInput): { start: string; end: string }
   }
 
   // default monthly: full calendar month of startDate
-  const lastDay = new Date(year, month, 0).getDate();
+  const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
   const padMonth = String(month).padStart(2, "0");
   return {
     start: `${yearStr}-${padMonth}-01`,
