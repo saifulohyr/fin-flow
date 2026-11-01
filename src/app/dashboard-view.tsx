@@ -12,6 +12,11 @@ import {
   RawTransaction,
 } from "@/lib/finance-engine";
 import {
+  calculateBudgetProgress,
+  calculateOverallBudgetHealth,
+} from "@/lib/budget-engine";
+import { BudgetInput } from "@/lib/validations/budget";
+import {
   ArrowUpRight,
   ArrowDownLeft,
   Wallet,
@@ -22,6 +27,9 @@ import {
   PieChart,
   ShieldCheck,
   TrendingUp,
+  Target,
+  AlertTriangle,
+  CheckCircle2,
 } from "lucide-react";
 
 interface DisplayTransaction extends RawTransaction {
@@ -75,9 +83,40 @@ const INITIAL_TRANSACTIONS: DisplayTransaction[] = [
   },
 ];
 
+const INITIAL_BUDGETS: BudgetInput[] = [
+  {
+    id: "bgt-1",
+    categoryId: "Makanan & Minuman",
+    amount: 1500000,
+    period: "monthly",
+    startDate: "2026-10-01",
+    endDate: "2026-10-31",
+    notifyThreshold: 80,
+  },
+  {
+    id: "bgt-2",
+    categoryId: "Transportasi",
+    amount: 400000,
+    period: "monthly",
+    startDate: "2026-10-01",
+    endDate: "2026-10-31",
+    notifyThreshold: 80,
+  },
+  {
+    id: "bgt-3",
+    categoryId: "Tagihan & Utilitas",
+    amount: 500000,
+    period: "monthly",
+    startDate: "2026-10-01",
+    endDate: "2026-10-31",
+    notifyThreshold: 80,
+  },
+];
+
 export function DashboardView() {
   const [accounts, setAccounts] = useState<RawAccount[]>(INITIAL_ACCOUNTS);
   const [transactions, setTransactions] = useState<DisplayTransaction[]>(INITIAL_TRANSACTIONS);
+  const [budgets] = useState<BudgetInput[]>(INITIAL_BUDGETS);
   const [nluInput, setNluInput] = useState("");
   const [parsedPreview, setParsedPreview] = useState<ReturnType<typeof parseTransactionNLU> | null>(null);
 
@@ -86,6 +125,7 @@ export function DashboardView() {
   const monthlyTotals = calculateMonthlyTotals(transactions, currentYearMonth);
   const categoryBreakdown = calculateCategoryBreakdown(transactions, currentYearMonth);
   const runwayMonths = calculateRunwayMonths(netWorth, monthlyTotals.expense);
+  const budgetHealth = calculateOverallBudgetHealth(budgets, transactions, "2026-10-31");
 
   const handleInputChange = (value: string) => {
     setNluInput(value);
@@ -143,7 +183,7 @@ export function DashboardView() {
             </span>
           </div>
           <p className="text-sm text-[var(--text-muted)] mt-1">
-            Buku kas pribadi, kalkulasi keuangan presisi, dan entri natural language.
+            Buku kas pribadi, kalkulasi keuangan presisi, pemantauan anggaran, dan entri natural language.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -230,6 +270,82 @@ export function DashboardView() {
             <Plus className="w-4 h-4" /> Parse & Catat
           </button>
         </form>
+      </section>
+
+      {/* Budget Tracking Module */}
+      <section className="p-5 rounded-lg border border-[var(--border)] bg-[var(--surface)] space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--border)] pb-3">
+          <div className="flex items-center gap-2">
+            <Target className="w-4 h-4 text-[var(--accent)]" />
+            <h2 className="text-sm font-semibold tracking-tight text-[var(--foreground)]">Pemantauan Target Anggaran</h2>
+            <span className="text-xs px-2 py-0.5 rounded bg-[var(--surface-subtle)] text-[var(--text-muted)] border border-[var(--border)] font-mono tabular-numbers">
+              {budgetHealth.percentage}% Terpakai
+            </span>
+          </div>
+          <div className="flex items-center gap-3 text-xs tabular-numbers font-mono text-[var(--text-muted)]">
+            <span>Alokasi: <strong className="text-[var(--foreground)]">{formatIDR(budgetHealth.totalBudgeted)}</strong></span>
+            <span>•</span>
+            <span>Sisa: <strong className="text-[var(--foreground)]">{formatIDR(budgetHealth.remaining)}</strong></span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {budgets.map((bgt) => {
+            const progress = calculateBudgetProgress(bgt, transactions, "2026-10-31");
+            const isExceeded = progress.status === "exceeded";
+            const isWarning = progress.status === "warning";
+
+            return (
+              <div
+                key={bgt.id}
+                className="p-3.5 rounded-md border border-[var(--border)] bg-[var(--background)] space-y-2.5"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-[var(--foreground)] truncate">{bgt.categoryId}</span>
+                  <span
+                    className={`inline-flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded font-mono ${
+                      isExceeded
+                        ? "bg-[var(--expense-light)] text-[var(--expense)]"
+                        : isWarning
+                        ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                        : "bg-[var(--accent-light)] text-[var(--accent)]"
+                    }`}
+                  >
+                    {isExceeded ? (
+                      <AlertTriangle className="w-3 h-3" />
+                    ) : (
+                      <CheckCircle2 className="w-3 h-3" />
+                    )}
+                    {progress.percentage}%
+                  </span>
+                </div>
+
+                <div className="w-full bg-[var(--surface-subtle)] h-2 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all ${
+                      isExceeded
+                        ? "bg-[var(--expense)]"
+                        : isWarning
+                        ? "bg-amber-500"
+                        : "bg-[var(--accent)]"
+                    }`}
+                    style={{ width: `${Math.min(100, progress.percentage)}%` }}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between text-xs text-[var(--text-muted)] tabular-numbers font-mono">
+                  <span>{formatIDR(progress.spent)}</span>
+                  <span>{formatIDR(progress.amount)}</span>
+                </div>
+
+                <div className="pt-1 border-t border-[var(--border)] flex items-center justify-between text-[11px] text-[var(--text-muted)]">
+                  <span>Sisa: {formatIDR(progress.remaining)}</span>
+                  <span className="tabular-numbers">Rekom: {formatIDR(progress.dailyRecommended)}/hari</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </section>
 
       {/* Main Grid: Accounts, Category Breakdown & Recent Ledger */}
