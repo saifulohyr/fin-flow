@@ -166,12 +166,15 @@ importers:
 
   .:
     dependencies:
+      '@neondatabase/serverless':
+        specifier: ^1.2.0
+        version: 1.2.0
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
       drizzle-orm:
         specifier: ^0.45.4
-        version: 0.45.4
+        version: 0.45.4(@neondatabase/serverless@1.2.0)
       lucide-react:
         specifier: ^1.65.0
         version: 1.65.0(@types/react@19.3.0)(react@19.3.0)
@@ -187,6 +190,9 @@ importers:
       tailwind-merge:
         specifier: ^3.7.0
         version: 3.7.0
+      ws:
+        specifier: ^8.22.1
+        version: 8.22.1
       zod:
         specifier: ^4.6.7
         version: 4.6.7
@@ -206,6 +212,9 @@ importers:
       '@types/react-dom':
         specifier: ^19
         version: 19.3.0(@types/react@19.3.0)
+      '@types/ws':
+        specifier: ^8.18.2
+        version: 8.18.2
       '@vitejs/plugin-react':
         specifier: ^6.1.2
         version: 6.1.2(vite@8.3.5(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15))
@@ -715,6 +724,10 @@ packages:
       '@emnapi/core': ^1.7.1 || 2.0.0-beta.2
       '@emnapi/runtime': ^1.7.1 || 2.0.0-beta.2
 
+  '@neondatabase/serverless@1.2.0':
+    resolution: {integrity: sha512-tnaqgixUengZQNd9ZrS3ytQfamJzLKY8QxgqWQTNHHtB+KrFQWk77JTbbpg4RD+J3qE4eO2lVytvGDX5Kj6FdQ==}
+    engines: {node: '>=19.0.0'}
+
   '@netlify/plugin-nextjs@5.16.5':
     resolution: {integrity: sha512-pt0j/YCZr5Kn2ziGS4Ps+RvREEn5LN2M9iv9iqEgNWZGb4esu7MCMy4RIYS0UR3JuBHxVtsvPHo0gEv+RKFpag==}
     engines: {node: '>=18.0.0'}
@@ -1021,6 +1034,9 @@ packages:
 
   '@types/react@19.3.0':
     resolution: {integrity: sha512-N0rFCuH9YoxG9/m61l9MfpJKfmLOVU0em7ipIz6TRgSSkvReLB9vL85GB+yr8Bs5leqpvg96JSwF4ZS1s4viQg==}
+
+  '@types/ws@8.18.2':
+    resolution: {integrity: sha512-67MQl+fpWKVTT1NYdnmo3U4sc/xPo/zQBncVnI74qmQa0z/b+1g6iYqNmGCPbxO+zz2aklb08a0oHfegiVd0/w==}
 
   '@typescript-eslint/eslint-plugin@8.72.1':
     resolution: {integrity: sha512-5CokTWXpmbylfFabsbvHC0CAw3XLaGnoa+nFJX5FR592h/LoZsENUE6p/rg5xvkKrFEXz6pYmgI29AgXc2N3BQ==}
@@ -2802,6 +2818,18 @@ packages:
     resolution: {integrity: sha512-BN22B5eaMMI9UMtjrGd5g5eCYPpCPDUy0FJXbYsaT5zYxjFOckS53SQDE3pWkVoWpHXVb3BrYcEN4Twa55B5cA==}
     engines: {node: '>=0.10.0'}
 
+  ws@8.22.1:
+    resolution: {integrity: sha512-oyL6OPYme/CmiFvNuGzeoxCJ4nOrZE2O1FwM9MWM1AsGri6nLXB2pg+lNA8aLeXMSav0J6eIVS1j6vUPzUtK9g==}
+    engines: {node: '>=10.0.0'}
+    peerDependencies:
+      bufferutil: ^4.0.1
+      utf-8-validate: '>=5.0.2'
+    peerDependenciesMeta:
+      bufferutil:
+        optional: true
+      utf-8-validate:
+        optional: true
+
   yallist@3.1.1:
     resolution: {integrity: sha512-a4UGQaWPH59mOXUYnAG2ewncQS4i4F43Tv3JoAM+s2VDAmS9NsK8GpDMLrCHPksFT7h3K6TOoUNn2pb7RoXx4g==}
 
@@ -3221,6 +3249,8 @@ snapshots:
       '@tybys/wasm-util': 0.10.4
     optional: true
 
+  '@neondatabase/serverless@1.2.0': {}
+
   '@netlify/plugin-nextjs@5.16.5': {}
 
   '@next/env@16.4.3': {}
@@ -3422,6 +3452,10 @@ snapshots:
   '@types/react@19.3.0':
     dependencies:
       csstype: 3.2.3
+
+  '@types/ws@8.18.2':
+    dependencies:
+      '@types/node': 20.19.43
 
   '@typescript-eslint/eslint-plugin@8.72.1(@typescript-eslint/parser@8.72.1(eslint@9.39.5(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@5.9.3))(eslint@9.39.5(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@5.9.3)':
     dependencies:
@@ -3831,7 +3865,9 @@ snapshots:
     dependencies:
       esutils: 2.0.3
 
-  drizzle-orm@0.45.4: {}
+  drizzle-orm@0.45.4(@neondatabase/serverless@1.2.0):
+    optionalDependencies:
+      '@neondatabase/serverless': 1.2.0
 
   dunder-proto@1.0.1:
     dependencies:
@@ -5319,6 +5355,8 @@ snapshots:
   why-is-node-running@3.2.1: {}
 
   word-wrap@1.2.5: {}
+
+  ws@8.22.1: {}
 
   yallist@3.1.1: {}
 
