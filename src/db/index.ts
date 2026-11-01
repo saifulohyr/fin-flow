@@ -10,5 +10,5 @@ if (!connectionString) {
 }
 
 const sql = connectionString ? neon(connectionString) : null;
-export const db = sql ? drizzle(sql, { schema }) : (null as any);
+export const db = sql ? drizzle(sql, { schema }) : (null as unknown as ReturnType<typeof drizzle<typeof schema>>);
 export { schema };

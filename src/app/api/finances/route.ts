@@ -25,9 +25,10 @@ export async function GET() {
         transactions,
       },
     });
-  } catch (error: any) {
+  } catch (error) {
+    const details = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
-      { error: "Database query failed", details: error.message },
+      { error: "Database query failed", details },
       { status: 500 }
     );
   }

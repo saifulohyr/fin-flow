@@ -42,7 +42,7 @@ describe("GET /api/finances", () => {
       .mockResolvedValueOnce(mockCategories)
       .mockResolvedValueOnce(mockTransactions);
 
-    vi.mocked(neon).mockReturnValue(mockSql as any);
+    vi.mocked(neon).mockReturnValue(mockSql as unknown as ReturnType<typeof neon>);
 
     const res = await GET();
     const json = await res.json();
@@ -59,7 +59,7 @@ describe("GET /api/finances", () => {
     process.env.DATABASE_URL = "postgres://user:pass@localhost:5432/db";
 
     const mockSql = vi.fn().mockRejectedValue(new Error("Connection terminated unexpectedly"));
-    vi.mocked(neon).mockReturnValue(mockSql as any);
+    vi.mocked(neon).mockReturnValue(mockSql as unknown as ReturnType<typeof neon>);
 
     const res = await GET();
     const json = await res.json();

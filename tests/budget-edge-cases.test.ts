@@ -4,7 +4,7 @@ import {
   calculateOverallBudgetHealth,
   projectPeriodSpend,
 } from "@/lib/budget-engine";
-import { validateBudgetAction, evaluateBudgetAlertsAction } from "@/actions/budget";
+import { evaluateBudgetAlertsAction } from "@/actions/budget";
 import { BudgetInput } from "@/lib/validations/budget";
 import { RawTransaction } from "@/lib/finance-engine";
 
@@ -238,7 +238,7 @@ describe("Overall Budget Health & Velocity Projections", () => {
 describe("Budget Actions - Edge Cases and Error Boundaries", () => {
   it("rejects non-array parameters gracefully in evaluateBudgetAlertsAction", async () => {
     const res = await evaluateBudgetAlertsAction(
-      null as any,
+      null as unknown as BudgetInput[],
       []
     );
     expect(res.success).toBe(false);
@@ -246,7 +246,7 @@ describe("Budget Actions - Edge Cases and Error Boundaries", () => {
 
     const res2 = await evaluateBudgetAlertsAction(
       [],
-      null as any
+      null as unknown as RawTransaction[]
     );
     expect(res2.success).toBe(false);
   });
