@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { accounts, categories, transactions } from "@/db/schema";
+import { accounts, categories, transactions, budgets } from "@/db/schema";
 import { getTableColumns } from "drizzle-orm";
 
 describe("Database schema definitions", () => {
@@ -24,5 +24,14 @@ describe("Database schema definitions", () => {
     expect(cols.amount).toBeDefined();
     expect(cols.accountId).toBeDefined();
     expect(cols.categoryId).toBeDefined();
+  });
+
+  it("defines budgets table columns correctly", () => {
+    const cols = getTableColumns(budgets);
+    expect(cols.id).toBeDefined();
+    expect(cols.categoryId).toBeDefined();
+    expect(cols.amount).toBeDefined();
+    expect(cols.period).toBeDefined();
+    expect(cols.startDate).toBeDefined();
   });
 });
