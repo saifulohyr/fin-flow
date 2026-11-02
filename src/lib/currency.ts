@@ -12,6 +12,11 @@ export function formatIDR(amount: number): string {
   }).format(amount);
 }
 
+export function formatPercentage(value: number): string {
+  const sign = value > 0 ? "+" : "";
+  return `${sign}${value.toFixed(1)}%`;
+}
+
 export function parseIDRShorthand(input: string): number | null {
   const clean = input.trim().toLowerCase().replace(/\s+/g, "");
   if (!clean) return null;
