@@ -1,9 +1,10 @@
-import { pgTable, text, integer, timestamp, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, timestamp, pgEnum, boolean } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
 export const accountTypeEnum = pgEnum("account_type", ["bank", "ewallet", "cash", "investment"]);
 export const transactionTypeEnum = pgEnum("transaction_type", ["income", "expense", "transfer"]);
 export const budgetPeriodEnum = pgEnum("budget_period", ["monthly", "weekly", "yearly"]);
+export const recurringFrequencyEnum = pgEnum("recurring_frequency", ["daily", "weekly", "monthly", "yearly"]);
 
 export const accounts = pgTable("accounts", {
   id: text("id").primaryKey(),
@@ -46,13 +47,30 @@ export const budgets = pgTable("budgets", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const recurringTransactions = pgTable("recurring_transactions", {
+  id: text("id").primaryKey(),
+  title: text("title").notNull(),
+  amount: integer("amount").notNull(),
+  categoryId: text("category_id").references(() => categories.id, { onDelete: "restrict" }).notNull(),
+  accountId: text("account_id").references(() => accounts.id, { onDelete: "cascade" }).notNull(),
+  frequency: recurringFrequencyEnum("frequency").notNull().default("monthly"),
+  startDate: text("start_date").notNull(),
+  nextDueDate: text("next_due_date").notNull(),
+  isActive: boolean("is_active").notNull().default(true),
+  autoDeduct: boolean("auto_deduct").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const accountsRelations = relations(accounts, ({ many }) => ({
   transactions: many(transactions, { relationName: "accountTransactions" }),
+  recurringTransactions: many(recurringTransactions),
 }));
 
 export const categoriesRelations = relations(categories, ({ many }) => ({
   transactions: many(transactions),
   budgets: many(budgets),
+  recurringTransactions: many(recurringTransactions),
 }));
 
 export const transactionsRelations = relations(transactions, ({ one }) => ({
@@ -75,6 +93,17 @@ export const transactionsRelations = relations(transactions, ({ one }) => ({
 export const budgetsRelations = relations(budgets, ({ one }) => ({
   category: one(categories, {
     fields: [budgets.categoryId],
+    references: [categories.id],
+  }),
+}));
+
+export const recurringTransactionsRelations = relations(recurringTransactions, ({ one }) => ({
+  account: one(accounts, {
+    fields: [recurringTransactions.accountId],
+    references: [accounts.id],
+  }),
+  category: one(categories, {
+    fields: [recurringTransactions.categoryId],
     references: [categories.id],
   }),
 }));
