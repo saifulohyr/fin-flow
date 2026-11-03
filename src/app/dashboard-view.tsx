@@ -264,7 +264,7 @@ export function DashboardView() {
 
     // Prepend transaction to ledger
     const newTx: DisplayTransaction = {
-      id: `tx-rec-${Date.now()}`,
+      id: `tx-rec-${rec.id}-${rec.nextDueDate}`,
       title: `Pembayaran: ${rec.title}`,
       categoryId: rec.categoryId,
       account: account.name,

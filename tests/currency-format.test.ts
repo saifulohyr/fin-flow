@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { formatIDR, parseIDRShorthand, formatPercentage } from "@/lib/currency";
+import { formatPercentage } from "@/lib/currency";
 
 describe("formatPercentage", () => {
   it("formats positive percentages with prefix", () => {
