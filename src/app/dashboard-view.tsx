@@ -19,7 +19,15 @@ import {
   calculateSpendingStats,
   aggregateSpendingByDate,
 } from "@/lib/spending-analytics";
+import {
+  computeNextDueDate,
+  calculateMonthlyCommitment,
+  getUpcomingBills,
+  projectCashflow,
+  calculateCashflowRunway,
+} from "@/lib/recurring-engine";
 import { BudgetInput } from "@/lib/validations/budget";
+import { RecurringTransactionInput } from "@/lib/validations/recurring";
 import {
   ArrowUpRight,
   ArrowDownLeft,
@@ -36,6 +44,9 @@ import {
   CheckCircle2,
   Activity,
   Calendar,
+  Repeat,
+  CalendarClock,
+  Receipt,
 } from "lucide-react";
 
 interface DisplayTransaction extends RawTransaction {
@@ -119,10 +130,62 @@ const INITIAL_BUDGETS: BudgetInput[] = [
   },
 ];
 
+const INITIAL_RECURRING: RecurringTransactionInput[] = [
+  {
+    id: "rec-1",
+    title: "Wi-Fi Fiber Rumah",
+    amount: 350000,
+    categoryId: "Tagihan & Utilitas",
+    accountId: "acc-1",
+    frequency: "monthly",
+    startDate: "2026-01-05",
+    nextDueDate: "2026-11-05",
+    isActive: true,
+    autoDeduct: true,
+  },
+  {
+    id: "rec-2",
+    title: "Langganan VPS Server",
+    amount: 180000,
+    categoryId: "Operasional",
+    accountId: "acc-1",
+    frequency: "monthly",
+    startDate: "2026-02-10",
+    nextDueDate: "2026-11-10",
+    isActive: true,
+    autoDeduct: false,
+  },
+  {
+    id: "rec-3",
+    title: "Iuran BPJS Kesehatan",
+    amount: 100000,
+    categoryId: "Asuransi & Kesehatan",
+    accountId: "acc-2",
+    frequency: "monthly",
+    startDate: "2026-01-15",
+    nextDueDate: "2026-11-15",
+    isActive: true,
+    autoDeduct: true,
+  },
+  {
+    id: "rec-4",
+    title: "Spotify Family",
+    amount: 86000,
+    categoryId: "Hiburan & Langganan",
+    accountId: "acc-3",
+    frequency: "monthly",
+    startDate: "2026-03-02",
+    nextDueDate: "2026-11-02",
+    isActive: true,
+    autoDeduct: false,
+  },
+];
+
 export function DashboardView() {
   const [accounts, setAccounts] = useState<RawAccount[]>(INITIAL_ACCOUNTS);
   const [transactions, setTransactions] = useState<DisplayTransaction[]>(INITIAL_TRANSACTIONS);
   const [budgets] = useState<BudgetInput[]>(INITIAL_BUDGETS);
+  const [recurring, setRecurring] = useState<RecurringTransactionInput[]>(INITIAL_RECURRING);
   const [nluInput, setNluInput] = useState("");
   const [parsedPreview, setParsedPreview] = useState<ReturnType<typeof parseTransactionNLU> | null>(null);
 
@@ -134,6 +197,16 @@ export function DashboardView() {
   const budgetHealth = calculateOverallBudgetHealth(budgets, transactions, "2026-10-31");
   const spendingStats = calculateSpendingStats(transactions);
   const dailySpending = aggregateSpendingByDate(transactions);
+
+  // Recurring Obligations & Cashflow calculations
+  const monthlyCommitment = calculateMonthlyCommitment(recurring);
+  const upcomingBills = getUpcomingBills(recurring, "2026-10-31", 7);
+  const upcomingTotal = upcomingBills.reduce((sum, item) => sum + item.amount, 0);
+  const projectedIncome = monthlyTotals.income > 0 ? monthlyTotals.income : 4500000;
+  const dailyBurn = spendingStats.dailyAverage > 0 ? spendingStats.dailyAverage : 25000;
+  const cashflowProjection = projectCashflow(netWorth, projectedIncome, recurring, dailyBurn, 30);
+  const monthlyNetBurn = monthlyCommitment + dailyBurn * 30 - projectedIncome;
+  const projectedRunway = calculateCashflowRunway(cashflowProjection.projectedBalance, monthlyNetBurn);
 
   const handleInputChange = (value: string) => {
     setNluInput(value);
@@ -176,6 +249,41 @@ export function DashboardView() {
     setTransactions((prev) => [newTx, ...prev]);
     setNluInput("");
     setParsedPreview(null);
+  };
+
+  const handlePayRecurring = (rec: RecurringTransactionInput) => {
+    const account = accounts.find((a) => a.id === rec.accountId) || accounts[0];
+    const nextDueDate = computeNextDueDate(rec.nextDueDate, rec.frequency);
+
+    // Deduct account balance
+    setAccounts((prev) =>
+      prev.map((acc) =>
+        acc.id === account.id ? { ...acc, balance: acc.balance - rec.amount } : acc
+      )
+    );
+
+    // Prepend transaction to ledger
+    const newTx: DisplayTransaction = {
+      id: `tx-rec-${Date.now()}`,
+      title: `Pembayaran: ${rec.title}`,
+      categoryId: rec.categoryId,
+      account: account.name,
+      amount: rec.amount,
+      type: "expense",
+      date: rec.nextDueDate,
+    };
+    setTransactions((prev) => [newTx, ...prev]);
+
+    // Advance nextDueDate
+    setRecurring((prev) =>
+      prev.map((item) => (item.id === rec.id ? { ...item, nextDueDate } : item))
+    );
+  };
+
+  const handleToggleRecurring = (id: string) => {
+    setRecurring((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, isActive: !item.isActive } : item))
+    );
   };
 
   return (
@@ -405,6 +513,164 @@ export function DashboardView() {
               );
             })
           )}
+        </div>
+      </section>
+
+      {/* Recurring Obligations & Cashflow Projection Engine */}
+      <section className="p-5 rounded-lg border border-[var(--border)] bg-[var(--surface)] space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--border)] pb-3">
+          <div className="flex items-center gap-2">
+            <Repeat className="w-4 h-4 text-[var(--accent)]" />
+            <h2 className="text-sm font-semibold tracking-tight text-[var(--foreground)]">
+              Kewajiban Rutin & Proyeksi Kas
+            </h2>
+            <span className="text-xs px-2 py-0.5 rounded bg-[var(--surface-subtle)] text-[var(--text-muted)] border border-[var(--border)] font-mono tabular-numbers">
+              {recurring.filter((r) => r.isActive).length} Aktif
+            </span>
+          </div>
+          <div className="flex items-center gap-3 text-xs tabular-numbers font-mono text-[var(--text-muted)]">
+            <span>Komitmen Bulanan: <strong className="text-[var(--foreground)]">{formatIDR(monthlyCommitment)}</strong></span>
+            <span>•</span>
+            <span>Tagihan 7 Hari: <strong className={upcomingBills.length > 0 ? "text-[var(--expense)]" : "text-[var(--foreground)]"}>{upcomingBills.length} Tagihan ({formatIDR(upcomingTotal)})</strong></span>
+          </div>
+        </div>
+
+        {/* 2-Column Grid: Left: Cashflow Projection 30 Days; Right: Recurring Schedule */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {/* Projection Card */}
+          <div className="p-4 rounded-md border border-[var(--border)] bg-[var(--background)] space-y-3 lg:col-span-1 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between border-b border-[var(--border)] pb-2">
+                <span className="text-xs font-semibold text-[var(--foreground)] flex items-center gap-1.5">
+                  <CalendarClock className="w-3.5 h-3.5 text-[var(--accent)]" />
+                  Proyeksi Kas 30 Hari
+                </span>
+                <span className="text-[11px] font-mono px-1.5 py-0.5 rounded bg-[var(--surface-subtle)] text-[var(--text-muted)] border border-[var(--border)]">
+                  Simulasi Tetap
+                </span>
+              </div>
+
+              <div className="mt-3 space-y-2 text-xs font-mono">
+                <div className="flex items-center justify-between">
+                  <span className="text-[var(--text-muted)]">Saldo Awal:</span>
+                  <span className="tabular-numbers font-medium text-[var(--foreground)]">{formatIDR(netWorth)}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[var(--text-muted)]">Proyeksi Pemasukan:</span>
+                  <span className="tabular-numbers text-[var(--accent)]">+{formatIDR(projectedIncome)}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[var(--text-muted)]">Komitmen Rutin:</span>
+                  <span className="tabular-numbers text-[var(--expense)]">-{formatIDR(cashflowProjection.fixedExpenseTotal)}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[var(--text-muted)]">Burn Discretionary:</span>
+                  <span className="tabular-numbers text-[var(--expense)]">-{formatIDR(cashflowProjection.discretionaryExpenseTotal)}</span>
+                </div>
+
+                <div className="pt-2 border-t border-[var(--border)] flex items-center justify-between text-xs font-semibold">
+                  <span className="text-[var(--foreground)]">Proyeksi Akhir:</span>
+                  <span className={`tabular-numbers ${cashflowProjection.projectedBalance >= 0 ? "text-[var(--foreground)]" : "text-[var(--expense)]"}`}>
+                    {formatIDR(cashflowProjection.projectedBalance)}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-[var(--border)] flex items-center justify-between text-[11px] text-[var(--text-muted)] font-mono">
+              <span>Runway Kas Proyeksi:</span>
+              <span className="font-semibold text-[var(--foreground)]">
+                {projectedRunway.runwayMonths === Infinity ? "Surplus / Lestari" : `${projectedRunway.runwayMonths} Bulan`}
+              </span>
+            </div>
+          </div>
+
+          {/* Obligations List */}
+          <div className="p-4 rounded-md border border-[var(--border)] bg-[var(--background)] space-y-3 lg:col-span-2">
+            <div className="flex items-center justify-between border-b border-[var(--border)] pb-2">
+              <span className="text-xs font-semibold text-[var(--foreground)] flex items-center gap-1.5">
+                <Receipt className="w-3.5 h-3.5 text-[var(--accent)]" />
+                Jadwal Kewajiban & Tagihan
+              </span>
+              <span className="text-[11px] text-[var(--text-muted)]">
+                Eksekusi bayar untuk rekonsiliasi saldo & ledger
+              </span>
+            </div>
+
+            <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+              {recurring.map((rec) => {
+                const targetAccount = accounts.find((a) => a.id === rec.accountId)?.name || rec.accountId;
+                const isUpcoming = upcomingBills.some((u) => u.id === rec.id);
+
+                return (
+                  <div
+                    key={rec.id}
+                    className={`p-2.5 rounded border transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-2 ${
+                      !rec.isActive
+                        ? "opacity-60 bg-[var(--surface-subtle)] border-[var(--border)]"
+                        : isUpcoming
+                        ? "border-[var(--expense)]/40 bg-[var(--surface)]"
+                        : "border-[var(--border)] bg-[var(--surface)] hover:border-[var(--border-strong)]"
+                    }`}
+                  >
+                    <div className="min-w-0 space-y-0.5">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-medium text-[var(--foreground)] truncate">
+                          {rec.title}
+                        </span>
+                        <span className="text-[10px] px-1.5 py-0.2 rounded font-mono uppercase bg-[var(--surface-subtle)] text-[var(--text-muted)] border border-[var(--border)]">
+                          {rec.frequency === "monthly" ? "Bulanan" : rec.frequency}
+                        </span>
+                        {isUpcoming && (
+                          <span className="text-[10px] px-1.5 py-0.2 rounded font-mono bg-[var(--expense-light)] text-[var(--expense)]">
+                            Jatuh Tempo Segera
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[11px] text-[var(--text-muted)] flex items-center gap-2">
+                        <span>{rec.categoryId}</span>
+                        <span>•</span>
+                        <span>{targetAccount}</span>
+                        <span>•</span>
+                        <span className="font-mono tabular-numbers">Jatuh Tempo: {rec.nextDueDate}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 shrink-0">
+                      <div className="text-right">
+                        <div className="text-xs font-semibold tabular-numbers text-[var(--foreground)] font-mono">
+                          {formatIDR(rec.amount)}
+                        </div>
+                        <div className="text-[10px] text-[var(--text-muted)]">
+                          {rec.autoDeduct ? "Auto-debet" : "Manual"}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => handlePayRecurring(rec)}
+                          disabled={!rec.isActive}
+                          className="px-2.5 py-1 text-[11px] font-medium rounded bg-[var(--foreground)] text-[var(--background)] hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity whitespace-nowrap"
+                          title="Bayar tagihan & catat ke ledger"
+                        >
+                          Bayar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleToggleRecurring(rec.id)}
+                          className="px-2 py-1 text-[11px] font-medium rounded border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--foreground)] hover:bg-[var(--surface-subtle)] transition-colors"
+                          title={rec.isActive ? "Jeda kewajiban" : "Aktifkan kewajiban"}
+                        >
+                          {rec.isActive ? "Jeda" : "Aktif"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </section>
 

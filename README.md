@@ -6,6 +6,8 @@ Personal finance dashboard with Indonesian NLU-first transaction parsing, delibe
 - **Natural Language Transaction Parsing:** Shorthand Indonesian parsing (`kopi 22rb gopay`, `bonus 500rb bca`, `listrik 150rb`).
 - **Financial Calculation Engine:** Automated computation for Net Worth, monthly totals, category breakdown, runway months, and savings rate.
 - **Budget Pacing & Threshold Tracking:** Real-time budget progress bar, remaining daily spend recommendations, and safe/warning/exceeded status alerts.
+- **Recurring Obligations & Cashflow Projection:** Automated tracking for recurring commitments (subscriptions, utilities, insurance), upcoming 7-day bill horizon detection, 30-day cashflow simulation, and discretionary burn runway forecasting.
+- **Spending Analytics & Daily Trends:** Granular daily expense aggregation, active day counting, peak spend day tracking, and daily burn monitoring.
 - **Strict Anti-AI-Slop UI:** Warm editorial palette, tabular figures (`font-variant-numeric: tabular-nums`), quiet panels, and content-first typography.
 - **Database & Serverless Ready:** Drizzle ORM schema with Zod validations and Neon Serverless Postgres integration with SSL pooler.
 
