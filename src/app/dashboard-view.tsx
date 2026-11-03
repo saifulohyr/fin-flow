@@ -15,6 +15,10 @@ import {
   calculateBudgetProgress,
   calculateOverallBudgetHealth,
 } from "@/lib/budget-engine";
+import {
+  calculateSpendingStats,
+  aggregateSpendingByDate,
+} from "@/lib/spending-analytics";
 import { BudgetInput } from "@/lib/validations/budget";
 import {
   ArrowUpRight,
@@ -30,6 +34,8 @@ import {
   Target,
   AlertTriangle,
   CheckCircle2,
+  Activity,
+  Calendar,
 } from "lucide-react";
 
 interface DisplayTransaction extends RawTransaction {
@@ -126,6 +132,8 @@ export function DashboardView() {
   const categoryBreakdown = calculateCategoryBreakdown(transactions, currentYearMonth);
   const runwayMonths = calculateRunwayMonths(netWorth, monthlyTotals.expense);
   const budgetHealth = calculateOverallBudgetHealth(budgets, transactions, "2026-10-31");
+  const spendingStats = calculateSpendingStats(transactions);
+  const dailySpending = aggregateSpendingByDate(transactions);
 
   const handleInputChange = (value: string) => {
     setNluInput(value);
@@ -345,6 +353,58 @@ export function DashboardView() {
               </div>
             );
           })}
+        </div>
+      </section>
+
+      {/* Spending Analytics Trends */}
+      <section className="p-5 rounded-lg border border-[var(--border)] bg-[var(--surface)] space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--border)] pb-3">
+          <div className="flex items-center gap-2">
+            <Activity className="w-4 h-4 text-[var(--accent)]" />
+            <h2 className="text-sm font-semibold tracking-tight text-[var(--foreground)]">Tren Pengeluaran Harian</h2>
+            <span className="text-xs px-2 py-0.5 rounded bg-[var(--surface-subtle)] text-[var(--text-muted)] border border-[var(--border)] font-mono tabular-numbers">
+              {spendingStats.activeExpenseDays} Hari Aktif
+            </span>
+          </div>
+          <div className="flex items-center gap-3 text-xs tabular-numbers font-mono text-[var(--text-muted)]">
+            <span>Rata-rata: <strong className="text-[var(--foreground)]">{formatIDR(spendingStats.dailyAverage)}/hari</strong></span>
+            {spendingStats.peakDay && (
+              <>
+                <span>•</span>
+                <span>Puncak: <strong className="text-[var(--expense)]">{formatIDR(spendingStats.peakDay.amount)}</strong> ({spendingStats.peakDay.date})</span>
+              </>
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          {dailySpending.length === 0 ? (
+            <p className="text-xs text-[var(--text-muted)]">Belum ada data transaksi pengeluaran.</p>
+          ) : (
+            dailySpending.map((day) => {
+              const maxAmount = spendingStats.peakDay?.amount || 1;
+              const fillPct = Math.round((day.total / maxAmount) * 100);
+              return (
+                <div key={day.date} className="space-y-1">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-mono text-[var(--foreground)] flex items-center gap-1.5">
+                      <Calendar className="w-3 h-3 text-[var(--text-muted)]" />
+                      {day.date}
+                    </span>
+                    <span className="font-mono font-medium tabular-numbers text-[var(--foreground)]">
+                      {formatIDR(day.total)}
+                    </span>
+                  </div>
+                  <div className="w-full bg-[var(--surface-subtle)] h-1.5 rounded-full overflow-hidden">
+                    <div
+                      className="bg-[var(--accent)] h-full rounded-full transition-all"
+                      style={{ width: `${Math.max(4, fillPct)}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
       </section>
 
