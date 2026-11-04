@@ -5,6 +5,15 @@ export const accountTypeEnum = pgEnum("account_type", ["bank", "ewallet", "cash"
 export const transactionTypeEnum = pgEnum("transaction_type", ["income", "expense", "transfer"]);
 export const budgetPeriodEnum = pgEnum("budget_period", ["monthly", "weekly", "yearly"]);
 export const recurringFrequencyEnum = pgEnum("recurring_frequency", ["daily", "weekly", "monthly", "yearly"]);
+export const goalCategoryEnum = pgEnum("goal_category", [
+  "emergency_fund",
+  "sinking_fund",
+  "investment",
+  "purchase",
+  "education",
+  "other",
+]);
+export const goalPriorityEnum = pgEnum("goal_priority", ["low", "medium", "high"]);
 
 export const accounts = pgTable("accounts", {
   id: text("id").primaryKey(),
@@ -62,9 +71,25 @@ export const recurringTransactions = pgTable("recurring_transactions", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const savingsGoals = pgTable("savings_goals", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  targetAmount: integer("target_amount").notNull(),
+  currentAmount: integer("current_amount").notNull().default(0),
+  targetDate: text("target_date").notNull(),
+  category: goalCategoryEnum("category").notNull().default("sinking_fund"),
+  priority: goalPriorityEnum("priority").notNull().default("medium"),
+  accountId: text("account_id").references(() => accounts.id, { onDelete: "set null" }),
+  color: text("color").notNull().default("#047857"),
+  isCompleted: boolean("is_completed").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const accountsRelations = relations(accounts, ({ many }) => ({
   transactions: many(transactions, { relationName: "accountTransactions" }),
   recurringTransactions: many(recurringTransactions),
+  savingsGoals: many(savingsGoals),
 }));
 
 export const categoriesRelations = relations(categories, ({ many }) => ({
@@ -105,5 +130,12 @@ export const recurringTransactionsRelations = relations(recurringTransactions, (
   category: one(categories, {
     fields: [recurringTransactions.categoryId],
     references: [categories.id],
+  }),
+}));
+
+export const savingsGoalsRelations = relations(savingsGoals, ({ one }) => ({
+  account: one(accounts, {
+    fields: [savingsGoals.accountId],
+    references: [accounts.id],
   }),
 }));
