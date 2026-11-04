@@ -7,8 +7,6 @@ import {
   CreateSavingsGoalInput,
 } from "@/lib/validations/savings-goal";
 import {
-  calculateGoalProgress,
-  calculateMonthlySavingsRequired,
   evaluateGoalPacing,
   calculateSavingsGoalsSummary,
   applyGoalContribution,
