@@ -28,6 +28,12 @@ import {
 } from "@/lib/recurring-engine";
 import { BudgetInput } from "@/lib/validations/budget";
 import { RecurringTransactionInput } from "@/lib/validations/recurring";
+import { SavingsGoalInput } from "@/lib/validations/savings-goal";
+import {
+  calculateSavingsGoalsSummary,
+  calculateGoalProgress,
+  applyGoalContribution,
+} from "@/lib/savings-engine";
 import {
   ArrowUpRight,
   ArrowDownLeft,
@@ -47,6 +53,7 @@ import {
   Repeat,
   CalendarClock,
   Receipt,
+  PiggyBank,
 } from "lucide-react";
 
 interface DisplayTransaction extends RawTransaction {
@@ -181,11 +188,63 @@ const INITIAL_RECURRING: RecurringTransactionInput[] = [
   },
 ];
 
+const INITIAL_SAVINGS_GOALS: SavingsGoalInput[] = [
+  {
+    id: "sg-1",
+    name: "Dana Darurat",
+    targetAmount: 20000000,
+    currentAmount: 8500000,
+    targetDate: "2027-06-01",
+    category: "emergency_fund",
+    priority: "high",
+    accountId: "acc-1",
+    color: "#047857",
+    isCompleted: false,
+  },
+  {
+    id: "sg-2",
+    name: "Laptop Baru",
+    targetAmount: 12000000,
+    currentAmount: 3200000,
+    targetDate: "2027-01-15",
+    category: "purchase",
+    priority: "medium",
+    accountId: "acc-2",
+    color: "#92400e",
+    isCompleted: false,
+  },
+  {
+    id: "sg-3",
+    name: "Qurban 1448 H",
+    targetAmount: 3000000,
+    currentAmount: 1400000,
+    targetDate: "2027-05-01",
+    category: "sinking_fund",
+    priority: "high",
+    accountId: "acc-1",
+    color: "#1e3a5f",
+    isCompleted: false,
+  },
+  {
+    id: "sg-4",
+    name: "Kuliah Semester 6",
+    targetAmount: 5000000,
+    currentAmount: 5000000,
+    targetDate: "2027-02-01",
+    category: "education",
+    priority: "high",
+    accountId: "acc-1",
+    color: "#047857",
+    isCompleted: true,
+  },
+];
+
 export function DashboardView() {
   const [accounts, setAccounts] = useState<RawAccount[]>(INITIAL_ACCOUNTS);
   const [transactions, setTransactions] = useState<DisplayTransaction[]>(INITIAL_TRANSACTIONS);
   const [budgets] = useState<BudgetInput[]>(INITIAL_BUDGETS);
   const [recurring, setRecurring] = useState<RecurringTransactionInput[]>(INITIAL_RECURRING);
+  const [savingsGoals, setSavingsGoals] = useState<SavingsGoalInput[]>(INITIAL_SAVINGS_GOALS);
   const [nluInput, setNluInput] = useState("");
   const [parsedPreview, setParsedPreview] = useState<ReturnType<typeof parseTransactionNLU> | null>(null);
 
@@ -207,6 +266,7 @@ export function DashboardView() {
   const cashflowProjection = projectCashflow(netWorth, projectedIncome, recurring, dailyBurn, 30);
   const monthlyNetBurn = monthlyCommitment + dailyBurn * 30 - projectedIncome;
   const projectedRunway = calculateCashflowRunway(cashflowProjection.projectedBalance, monthlyNetBurn);
+  const savingsSummary = calculateSavingsGoalsSummary(savingsGoals, "2026-10-31");
 
   const handleInputChange = (value: string) => {
     setNluInput(value);
@@ -249,6 +309,25 @@ export function DashboardView() {
     setTransactions((prev) => [newTx, ...prev]);
     setNluInput("");
     setParsedPreview(null);
+  };
+
+  const handleContributeSavings = (goalId: string, amount: number) => {
+    const goal = savingsGoals.find((g) => g.id === goalId);
+    if (!goal) return;
+
+    const res = applyGoalContribution(goal, amount, "deposit");
+    setSavingsGoals((prev) =>
+      prev.map((g) => (g.id === goalId ? res.updatedGoal : g))
+    );
+
+    // Optional deduction from account if mapped
+    if (goal.accountId) {
+      setAccounts((prev) =>
+        prev.map((acc) =>
+          acc.id === goal.accountId ? { ...acc, balance: acc.balance - amount } : acc
+        )
+      );
+    }
   };
 
   const handlePayRecurring = (rec: RecurringTransactionInput) => {
@@ -671,6 +750,107 @@ export function DashboardView() {
               })}
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Savings Goals & Sinking Funds Section */}
+      <section className="p-5 rounded-lg border border-[var(--border)] bg-[var(--surface)] space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--border)] pb-3">
+          <div className="flex items-center gap-2">
+            <PiggyBank className="w-4 h-4 text-[var(--accent)]" />
+            <h2 className="text-sm font-semibold tracking-tight text-[var(--foreground)]">
+              Target Tabungan & Sinking Funds
+            </h2>
+            <span className="text-xs px-2 py-0.5 rounded bg-[var(--surface-subtle)] text-[var(--text-muted)] border border-[var(--border)] font-mono tabular-numbers">
+              {savingsSummary.activeCount} Aktif • {savingsSummary.completedCount} Tercapai
+            </span>
+          </div>
+          <div className="flex items-center gap-3 text-xs tabular-numbers font-mono text-[var(--text-muted)]">
+            <span>Terkumpul: <strong className="text-[var(--accent)]">{formatIDR(savingsSummary.totalCurrentAmount)}</strong></span>
+            <span>•</span>
+            <span>Target Total: <strong className="text-[var(--foreground)]">{formatIDR(savingsSummary.totalTargetAmount)}</strong></span>
+            <span>•</span>
+            <span>Kebutuhan Bulanan: <strong className="text-[var(--foreground)]">{formatIDR(savingsSummary.totalMonthlyNeeded)}/bln</strong></span>
+          </div>
+        </div>
+
+        {/* Goals Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {savingsGoals.map((goal) => {
+            const prog = calculateGoalProgress(goal.currentAmount, goal.targetAmount);
+            const isFinished = prog.isCompleted;
+
+            return (
+              <div
+                key={goal.id}
+                className="p-3.5 rounded-md border border-[var(--border)] bg-[var(--background)] flex flex-col justify-between space-y-3"
+              >
+                <div className="space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <span className="text-sm font-medium text-[var(--foreground)] truncate block">
+                        {goal.name}
+                      </span>
+                      <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wide">
+                        {goal.category.replace("_", " ")}
+                      </span>
+                    </div>
+                    <span
+                      className={`text-[11px] font-mono px-1.5 py-0.5 rounded ${
+                        isFinished
+                          ? "bg-[var(--accent-light)] text-[var(--accent)] font-semibold"
+                          : "bg-[var(--surface-subtle)] text-[var(--text-muted)] border border-[var(--border)]"
+                      }`}
+                    >
+                      {prog.percentage}%
+                    </span>
+                  </div>
+
+                  <div className="w-full bg-[var(--surface-subtle)] h-2 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all ${
+                        isFinished ? "bg-[var(--accent)]" : "bg-[var(--foreground)]"
+                      }`}
+                      style={{ width: `${prog.percentage}%` }}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs font-mono tabular-numbers text-[var(--text-muted)]">
+                    <span>{formatIDR(goal.currentAmount)}</span>
+                    <span>{formatIDR(goal.targetAmount)}</span>
+                  </div>
+
+                  <div className="flex items-center justify-between text-[11px] text-[var(--text-muted)] pt-1 border-t border-[var(--border)]">
+                    <span>Target: {goal.targetDate}</span>
+                    <span className="font-mono tabular-numbers">
+                      {isFinished ? "Lunas" : `Sisa ${formatIDR(prog.remainingAmount)}`}
+                    </span>
+                  </div>
+                </div>
+
+                {!isFinished && (
+                  <div className="pt-2 flex items-center gap-1.5 border-t border-[var(--border)]">
+                    <button
+                      type="button"
+                      onClick={() => handleContributeSavings(goal.id, 500000)}
+                      className="flex-1 py-1 text-[11px] font-medium rounded border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] hover:bg-[var(--surface-subtle)] transition-colors text-center font-mono tabular-numbers"
+                      title="Setor Rp 500.000 ke target tabungan"
+                    >
+                      +500rb
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleContributeSavings(goal.id, 1000000)}
+                      className="flex-1 py-1 text-[11px] font-medium rounded border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] hover:bg-[var(--surface-subtle)] transition-colors text-center font-mono tabular-numbers"
+                      title="Setor Rp 1.000.000 ke target tabungan"
+                    >
+                      +1jt
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </section>
 
