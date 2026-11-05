@@ -20,6 +20,17 @@ Personal finance dashboard with Indonesian NLU-first transaction parsing, delibe
 
 ## Deployment
 Live production URL: [https://fin-flow-nine-lovat.vercel.app](https://fin-flow-nine-lovat.vercel.app) (Hosted on Vercel)
+Fallback mirror: [https://saifuloh-finflow.netlify.app](https://saifuloh-finflow.netlify.app) (Netlify)
+Live API endpoint: [https://fin-flow-nine-lovat.vercel.app/api/finances](https://fin-flow-nine-lovat.vercel.app/api/finances)
+
+## Core Capabilities
+- Multi-Account & Net Worth calculation
+- NLU Parser IDR shorthand ("makan siang 35rb bca")
+- Monthly Budget Tracker & Category Allocation
+- Daily Spending Analytics & Peak Burn Metrics
+- Recurring Obligations & 30-Day Cashflow Projections
+- Savings Goals & Sinking Funds Allocator
+- Debt Tracker & Payoff Projections (Compounding & Debt-to-Asset Ratio)
 
 ## Getting Started
 
