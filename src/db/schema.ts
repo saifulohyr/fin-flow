@@ -139,3 +139,49 @@ export const savingsGoalsRelations = relations(savingsGoals, ({ one }) => ({
     references: [accounts.id],
   }),
 }));
+
+// ── Debt Tracker ───────────────────────────────────────────────────────────────
+export const debtTypeEnum = pgEnum("debt_type", [
+  "credit_card",
+  "personal_loan",
+  "mortgage",
+  "vehicle_loan",
+  "installment",
+  "other",
+]);
+export const debtStatusEnum = pgEnum("debt_status", ["active", "paid_off", "defaulted"]);
+
+export const debts = pgTable("debts", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  type: debtTypeEnum("type").notNull().default("personal_loan"),
+  principalAmount: integer("principal_amount").notNull(),
+  outstandingBalance: integer("outstanding_balance").notNull().default(0),
+  interestRateAnnual: integer("interest_rate_annual_bps").notNull().default(0), // basis points (1200 = 12%)
+  monthlyPayment: integer("monthly_payment").notNull(),
+  startDate: text("start_date").notNull(),
+  dueDate: text("due_date"),
+  accountId: text("account_id").references(() => accounts.id, { onDelete: "set null" }),
+  status: debtStatusEnum("status").notNull().default("active"),
+  color: text("color").notNull().default("#b45309"),
+  note: text("note"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+/** Point-in-time net-worth snapshot for historical trend. */
+export const netWorthSnapshots = pgTable("net_worth_snapshots", {
+  id: text("id").primaryKey(),
+  snapshotDate: text("snapshot_date").notNull(), // YYYY-MM-DD
+  totalAssets: integer("total_assets").notNull(),
+  totalDebt: integer("total_debt").notNull(),
+  netWorth: integer("net_worth").notNull(), // assets - debt
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const debtsRelations = relations(debts, ({ one }) => ({
+  account: one(accounts, {
+    fields: [debts.accountId],
+    references: [accounts.id],
+  }),
+}));
