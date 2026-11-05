@@ -34,6 +34,12 @@ import {
   calculateGoalProgress,
   applyGoalContribution,
 } from "@/lib/savings-engine";
+import { DebtInput } from "@/lib/validations/debt";
+import {
+  summarizeDebts,
+  projectAllPayoffs,
+  calculateDebtToAssetRatio,
+} from "@/lib/debt-engine";
 import {
   ArrowUpRight,
   ArrowDownLeft,
@@ -54,6 +60,7 @@ import {
   CalendarClock,
   Receipt,
   PiggyBank,
+  BadgePercent,
 } from "lucide-react";
 
 interface DisplayTransaction extends RawTransaction {
@@ -239,12 +246,61 @@ const INITIAL_SAVINGS_GOALS: SavingsGoalInput[] = [
   },
 ];
 
+const INITIAL_DEBTS: DebtInput[] = [
+  {
+    id: "debt-1",
+    name: "Cicilan Laptop Lab",
+    type: "installment",
+    principalAmount: 6000000,
+    outstandingBalance: 3500000,
+    interestRateAnnual: 9.5,
+    monthlyPayment: 850000,
+    startDate: "2026-06-01",
+    dueDate: "2027-02-01",
+    accountId: "acc-1",
+    status: "active",
+    color: "#b45309",
+    note: "Cicilan 10 bulan Tokopedia",
+  },
+  {
+    id: "debt-2",
+    name: "Tagihan Kartu Kredit",
+    type: "credit_card",
+    principalAmount: 2000000,
+    outstandingBalance: 1250000,
+    interestRateAnnual: 18,
+    monthlyPayment: 450000,
+    startDate: "2026-09-01",
+    dueDate: "2026-12-15",
+    accountId: "acc-1",
+    status: "active",
+    color: "#b91c1c",
+    note: "BCA Visa Everyday Card",
+  },
+  {
+    id: "debt-3",
+    name: "Pinjaman Alat Jaringan Komputer",
+    type: "personal_loan",
+    principalAmount: 1000000,
+    outstandingBalance: 500000,
+    interestRateAnnual: 0,
+    monthlyPayment: 500000,
+    startDate: "2026-10-01",
+    dueDate: "2026-11-20",
+    accountId: "acc-2",
+    status: "active",
+    color: "#475569",
+    note: "Talangan switch Cisco hub",
+  },
+];
+
 export function DashboardView() {
   const [accounts, setAccounts] = useState<RawAccount[]>(INITIAL_ACCOUNTS);
   const [transactions, setTransactions] = useState<DisplayTransaction[]>(INITIAL_TRANSACTIONS);
   const [budgets] = useState<BudgetInput[]>(INITIAL_BUDGETS);
   const [recurring, setRecurring] = useState<RecurringTransactionInput[]>(INITIAL_RECURRING);
   const [savingsGoals, setSavingsGoals] = useState<SavingsGoalInput[]>(INITIAL_SAVINGS_GOALS);
+  const [debts, setDebts] = useState<DebtInput[]>(INITIAL_DEBTS);
   const [nluInput, setNluInput] = useState("");
   const [parsedPreview, setParsedPreview] = useState<ReturnType<typeof parseTransactionNLU> | null>(null);
 
@@ -267,6 +323,9 @@ export function DashboardView() {
   const monthlyNetBurn = monthlyCommitment + dailyBurn * 30 - projectedIncome;
   const projectedRunway = calculateCashflowRunway(cashflowProjection.projectedBalance, monthlyNetBurn);
   const savingsSummary = calculateSavingsGoalsSummary(savingsGoals, "2026-10-31");
+  const debtSummary = summarizeDebts(debts);
+  const debtPayoffs = projectAllPayoffs(debts, "2026-10");
+  const debtRatio = calculateDebtToAssetRatio(debtSummary.totalDebt, netWorth);
 
   const handleInputChange = (value: string) => {
     setNluInput(value);
@@ -362,6 +421,20 @@ export function DashboardView() {
   const handleToggleRecurring = (id: string) => {
     setRecurring((prev) =>
       prev.map((item) => (item.id === id ? { ...item, isActive: !item.isActive } : item))
+    );
+  };
+
+  const handlePayDebt = (debtId: string, amount: number) => {
+    setDebts((prev) =>
+      prev.map((d) => {
+        if (d.id !== debtId) return d;
+        const newBalance = Math.max(0, d.outstandingBalance - amount);
+        return {
+          ...d,
+          outstandingBalance: newBalance,
+          status: newBalance === 0 ? ("paid_off" as const) : ("active" as const),
+        };
+      })
     );
   };
 
@@ -845,6 +918,109 @@ export function DashboardView() {
                       title="Setor Rp 1.000.000 ke target tabungan"
                     >
                       +1jt
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* Debt Tracker & Payoff Projections */}
+      <section className="p-5 rounded-lg border border-[var(--border)] bg-[var(--surface)] space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--border)] pb-3">
+          <div className="flex items-center gap-2">
+            <BadgePercent className="w-4 h-4 text-[var(--expense)]" />
+            <h2 className="text-sm font-semibold tracking-tight text-[var(--foreground)]">
+              Pemantauan Utang & Proyeksi Lunas
+            </h2>
+            <span className="text-xs px-2 py-0.5 rounded bg-[var(--surface-subtle)] text-[var(--text-muted)] border border-[var(--border)] font-mono tabular-numbers">
+              {debtSummary.activeDebtCount} Aktif • Rasio D/A {Math.round(debtRatio.ratio * 100)}% ({debtRatio.status})
+            </span>
+          </div>
+          <div className="flex items-center gap-3 text-xs tabular-numbers font-mono text-[var(--text-muted)]">
+            <span>Total Utang: <strong className="text-[var(--expense)]">{formatIDR(debtSummary.totalDebt)}</strong></span>
+            <span>•</span>
+            <span>Cicilan Bulanan: <strong className="text-[var(--foreground)]">{formatIDR(debtSummary.totalMonthlyPayment)}/bln</strong></span>
+          </div>
+        </div>
+
+        {/* Debts Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {debts.map((d) => {
+            const payoff = debtPayoffs.find((p) => p.debtId === d.id);
+            const isPaid = d.status === "paid_off" || d.outstandingBalance === 0;
+            const progressPct =
+              d.principalAmount > 0
+                ? Math.min(100, Math.round(((d.principalAmount - d.outstandingBalance) / d.principalAmount) * 100))
+                : 100;
+
+            return (
+              <div
+                key={d.id}
+                className="p-3.5 rounded-md border border-[var(--border)] bg-[var(--background)] flex flex-col justify-between space-y-3"
+              >
+                <div className="space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <span className="text-sm font-medium text-[var(--foreground)] truncate block">
+                        {d.name}
+                      </span>
+                      <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wide">
+                        {d.type.replace("_", " ")} • Bunga {d.interestRateAnnual}%/thn
+                      </span>
+                    </div>
+                    <span
+                      className={`text-[11px] font-mono px-1.5 py-0.5 rounded ${
+                        isPaid
+                          ? "bg-[var(--accent-light)] text-[var(--accent)] font-semibold"
+                          : "bg-[var(--surface-subtle)] text-[var(--text-muted)] border border-[var(--border)]"
+                      }`}
+                    >
+                      {isPaid ? "Lunas" : `${progressPct}%`}
+                    </span>
+                  </div>
+
+                  <div className="w-full bg-[var(--surface-subtle)] h-2 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all ${
+                        isPaid ? "bg-[var(--accent)]" : "bg-[var(--expense)]"
+                      }`}
+                      style={{ width: `${progressPct}%` }}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs font-mono tabular-numbers text-[var(--text-muted)]">
+                    <span>Sisa: <strong className={isPaid ? "text-[var(--text-muted)]" : "text-[var(--foreground)]"}>{formatIDR(d.outstandingBalance)}</strong></span>
+                    <span>Total: {formatIDR(d.principalAmount)}</span>
+                  </div>
+
+                  <div className="flex items-center justify-between text-[11px] text-[var(--text-muted)] pt-1 border-t border-[var(--border)]">
+                    <span>Cicilan: {formatIDR(d.monthlyPayment)}/bln</span>
+                    <span className="font-mono tabular-numbers">
+                      {isPaid ? "Tuntas" : payoff ? `Est. ${payoff.payoffDate}` : "-"}
+                    </span>
+                  </div>
+                </div>
+
+                {!isPaid && (
+                  <div className="pt-2 flex items-center gap-1.5 border-t border-[var(--border)]">
+                    <button
+                      type="button"
+                      onClick={() => handlePayDebt(d.id, d.monthlyPayment)}
+                      className="flex-1 py-1 text-[11px] font-medium rounded border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] hover:bg-[var(--surface-subtle)] transition-colors text-center font-mono tabular-numbers"
+                      title="Bayar cicilan bulanan sesuai jadwal"
+                    >
+                      Bayar {formatIDR(d.monthlyPayment)}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handlePayDebt(d.id, d.outstandingBalance)}
+                      className="py-1 px-2 text-[11px] font-medium rounded border border-[var(--border)] bg-[var(--accent-light)] text-[var(--accent)] hover:opacity-90 transition-opacity text-center font-mono"
+                      title="Pelunasan instan seluruh sisa utang"
+                    >
+                      Lunas
                     </button>
                   </div>
                 )}
