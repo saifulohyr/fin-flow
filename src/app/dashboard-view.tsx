@@ -325,7 +325,7 @@ export function DashboardView() {
   const savingsSummary = calculateSavingsGoalsSummary(savingsGoals, "2026-10-31");
   const debtSummary = summarizeDebts(debts);
   const debtPayoffs = projectAllPayoffs(debts, "2026-10");
-  const debtRatio = calculateDebtToAssetRatio(debtSummary.totalDebt, netWorth);
+  const debtRatio = calculateDebtToAssetRatio(netWorth, debtSummary.totalDebt);
 
   const handleInputChange = (value: string) => {
     setNluInput(value);
