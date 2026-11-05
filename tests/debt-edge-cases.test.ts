@@ -321,13 +321,18 @@ describe("Debt Schema & Validations", () => {
 
   describe("createDebtSchema validations", () => {
     it("allows omitting id and status when creating", () => {
-      const { id, status, ...createData } = baseDebtInput;
+      const createData = { ...baseDebtInput } as Partial<typeof baseDebtInput>;
+      delete createData.id;
+      delete createData.status;
       const parsed = createDebtSchema.safeParse(createData);
       expect(parsed.success).toBe(true);
     });
 
     it("allows omitting outstandingBalance upon creation (can default or compute)", () => {
-      const { id, status, outstandingBalance, ...createData } = baseDebtInput;
+      const createData = { ...baseDebtInput } as Partial<typeof baseDebtInput>;
+      delete createData.id;
+      delete createData.status;
+      delete createData.outstandingBalance;
       const parsed = createDebtSchema.safeParse(createData);
       expect(parsed.success).toBe(true);
     });

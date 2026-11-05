@@ -44,7 +44,9 @@ describe("validateDebtAction", () => {
 
 describe("validateCreateDebtAction", () => {
   it("accepts payload without id", async () => {
-    const { id, status, ...rest } = sampleDebt;
+    const rest = { ...sampleDebt } as Partial<typeof sampleDebt>;
+    delete rest.id;
+    delete rest.status;
     const res = await validateCreateDebtAction(rest);
     expect(res.success).toBe(true);
   });
@@ -59,7 +61,7 @@ describe("getDebtSummaryAction", () => {
   });
 
   it("returns error for non-array", async () => {
-    const res = await getDebtSummaryAction(null as any);
+    const res = await getDebtSummaryAction(null as unknown as Parameters<typeof getDebtSummaryAction>[0]);
     expect(res.success).toBe(false);
   });
 });

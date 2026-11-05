@@ -36,6 +36,10 @@ import {
 } from "@/lib/savings-engine";
 import { DebtInput } from "@/lib/validations/debt";
 import {
+  filterAccountsByType,
+  calculateAssetAllocation,
+} from "@/lib/account-utils";
+import {
   summarizeDebts,
   projectAllPayoffs,
   calculateDebtToAssetRatio,
@@ -44,7 +48,6 @@ import {
   ArrowUpRight,
   ArrowDownLeft,
   Wallet,
-  CreditCard,
   Sparkles,
   Plus,
   Clock,
@@ -61,6 +64,10 @@ import {
   Receipt,
   PiggyBank,
   BadgePercent,
+  Landmark,
+  Smartphone,
+  Banknote,
+  Layers,
 } from "lucide-react";
 
 interface DisplayTransaction extends RawTransaction {
@@ -301,6 +308,7 @@ export function DashboardView() {
   const [recurring, setRecurring] = useState<RecurringTransactionInput[]>(INITIAL_RECURRING);
   const [savingsGoals, setSavingsGoals] = useState<SavingsGoalInput[]>(INITIAL_SAVINGS_GOALS);
   const [debts, setDebts] = useState<DebtInput[]>(INITIAL_DEBTS);
+  const [selectedAccountType, setSelectedAccountType] = useState<string>("all");
   const [nluInput, setNluInput] = useState("");
   const [parsedPreview, setParsedPreview] = useState<ReturnType<typeof parseTransactionNLU> | null>(null);
 
@@ -326,6 +334,11 @@ export function DashboardView() {
   const debtSummary = summarizeDebts(debts);
   const debtPayoffs = projectAllPayoffs(debts, "2026-10");
   const debtRatio = calculateDebtToAssetRatio(netWorth, debtSummary.totalDebt);
+  const assetAllocation = calculateAssetAllocation(accounts);
+  const filteredAccounts =
+    selectedAccountType === "all"
+      ? accounts
+      : filterAccountsByType(accounts, selectedAccountType);
 
   const handleInputChange = (value: string) => {
     setNluInput(value);
@@ -1034,30 +1047,134 @@ export function DashboardView() {
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column: Accounts & Breakdown */}
         <div className="space-y-6">
-          {/* Accounts */}
+          {/* Accounts & Asset Allocation */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold tracking-tight text-[var(--foreground)]">Daftar Rekening</h2>
-              <span className="text-xs text-[var(--text-muted)]">{accounts.length} Akun</span>
+              <div className="flex items-center gap-2">
+                <Layers className="w-4 h-4 text-[var(--accent)]" />
+                <h2 className="text-sm font-semibold tracking-tight text-[var(--foreground)]">
+                  Daftar Rekening & Likuiditas
+                </h2>
+              </div>
+              <span className="text-xs text-[var(--text-muted)] font-mono tabular-numbers">
+                {accounts.length} Akun
+              </span>
             </div>
-            <div className="space-y-2">
-              {accounts.map((acc) => (
-                <div
-                  key={acc.id}
-                  className="p-3.5 rounded-md border border-[var(--border)] bg-[var(--surface)] flex items-center justify-between hover:border-[var(--border-strong)] transition-colors"
+
+            {/* Asset Allocation Distribution Bar */}
+            <div className="p-3.5 rounded-md border border-[var(--border)] bg-[var(--surface)] space-y-3">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-[var(--text-muted)] font-medium">Distribusi Aset Likuid</span>
+                <span className="font-mono tabular-numbers text-[var(--foreground)] font-semibold">
+                  {formatIDR(netWorth)}
+                </span>
+              </div>
+
+              {/* Stacked Proportional Bar */}
+              <div className="w-full bg-[var(--surface-subtle)] h-2 rounded-full overflow-hidden flex">
+                {assetAllocation.map((item, idx) => {
+                  const colors = [
+                    "bg-[var(--accent)]",
+                    "bg-amber-600",
+                    "bg-slate-500",
+                    "bg-sky-700",
+                  ];
+                  const barColor = colors[idx % colors.length];
+                  return (
+                    <div
+                      key={item.type}
+                      className={`h-full ${barColor}`}
+                      style={{ width: `${item.percentage}%` }}
+                      title={`${item.type}: ${item.percentage}% (${formatIDR(item.totalBalance)})`}
+                    />
+                  );
+                })}
+              </div>
+
+              {/* Type Allocation Badges */}
+              <div className="grid grid-cols-3 gap-2 pt-1 border-t border-[var(--border)]">
+                {assetAllocation.map((item, idx) => {
+                  const dotColors = [
+                    "bg-[var(--accent)]",
+                    "bg-amber-600",
+                    "bg-slate-500",
+                    "bg-sky-700",
+                  ];
+                  return (
+                    <div key={item.type} className="space-y-0.5">
+                      <div className="flex items-center gap-1.5 text-[11px] text-[var(--text-muted)]">
+                        <span className={`w-1.5 h-1.5 rounded-full ${dotColors[idx % dotColors.length]}`} />
+                        <span className="truncate">{item.type}</span>
+                      </div>
+                      <div className="text-xs font-mono font-medium tabular-numbers text-[var(--foreground)]">
+                        {item.percentage}%
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Filter Buttons */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+              <button
+                type="button"
+                onClick={() => setSelectedAccountType("all")}
+                className={`px-2.5 py-1 rounded text-xs font-medium transition-colors whitespace-nowrap ${
+                  selectedAccountType === "all"
+                    ? "bg-[var(--foreground)] text-[var(--background)]"
+                    : "bg-[var(--surface)] border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--foreground)]"
+                }`}
+              >
+                Semua ({accounts.length})
+              </button>
+              {assetAllocation.map((item) => (
+                <button
+                  key={item.type}
+                  type="button"
+                  onClick={() => setSelectedAccountType(item.type)}
+                  className={`px-2.5 py-1 rounded text-xs font-medium transition-colors whitespace-nowrap ${
+                    selectedAccountType.toLowerCase() === item.type.toLowerCase()
+                      ? "bg-[var(--foreground)] text-[var(--background)]"
+                      : "bg-[var(--surface)] border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--foreground)]"
+                  }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <CreditCard className="w-4 h-4 text-[var(--text-muted)]" />
-                    <div>
-                      <div className="text-sm font-medium text-[var(--foreground)]">{acc.name}</div>
-                      <div className="text-xs text-[var(--text-muted)]">{acc.type}</div>
+                  {item.type} ({item.count})
+                </button>
+              ))}
+            </div>
+
+            {/* Account Cards */}
+            <div className="space-y-2">
+              {filteredAccounts.map((acc) => {
+                const getAccountIcon = (type: string) => {
+                  const lower = type.toLowerCase();
+                  if (lower.includes("bank")) return <Landmark className="w-4 h-4 text-[var(--accent)]" />;
+                  if (lower.includes("wallet") || lower.includes("gopay") || lower.includes("ovo"))
+                    return <Smartphone className="w-4 h-4 text-amber-600" />;
+                  return <Banknote className="w-4 h-4 text-slate-500" />;
+                };
+
+                return (
+                  <div
+                    key={acc.id}
+                    className="p-3 rounded-md border border-[var(--border)] bg-[var(--surface)] flex items-center justify-between hover:border-[var(--border-strong)] transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="p-1.5 rounded bg-[var(--surface-subtle)] border border-[var(--border)]">
+                        {getAccountIcon(acc.type)}
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium text-[var(--foreground)]">{acc.name}</div>
+                        <div className="text-xs text-[var(--text-muted)]">{acc.type}</div>
+                      </div>
+                    </div>
+                    <div className="text-sm font-semibold tabular-numbers text-[var(--foreground)] font-mono">
+                      {formatIDR(acc.balance)}
                     </div>
                   </div>
-                  <div className="text-sm font-semibold tabular-numbers text-[var(--foreground)]">
-                    {formatIDR(acc.balance)}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
