@@ -1,0 +1,236 @@
+import { RawAccount, RawTransaction } from "@/lib/finance-engine";
+import { BudgetInput } from "@/lib/validations/budget";
+import { RecurringTransactionInput } from "@/lib/validations/recurring";
+import { SavingsGoalInput } from "@/lib/validations/savings-goal";
+import { DebtInput } from "@/lib/validations/debt";
+
+export interface DisplayTransaction extends RawTransaction {
+  title: string;
+  account: string;
+}
+
+export const INITIAL_ACCOUNTS: RawAccount[] = [
+  { id: "acc-1", name: "BCA Tabungan", type: "Bank", balance: 14250000 },
+  { id: "acc-2", name: "Bank Mandiri", type: "Bank", balance: 5800000 },
+  { id: "acc-3", name: "GoPay", type: "E-Wallet", balance: 340000 },
+  { id: "acc-4", name: "Tunai / Cash", type: "Physical", balance: 650000 },
+];
+
+export const INITIAL_TRANSACTIONS: DisplayTransaction[] = [
+  {
+    id: "tx-1",
+    title: "Honor Freelance Web",
+    categoryId: "Freelance",
+    account: "BCA Tabungan",
+    amount: 4500000,
+    type: "income",
+    date: "2026-10-31",
+  },
+  {
+    id: "tx-2",
+    title: "Makan Siang Nasi Padang",
+    categoryId: "Makanan & Minuman",
+    account: "GoPay",
+    amount: 32000,
+    type: "expense",
+    date: "2026-10-31",
+  },
+  {
+    id: "tx-3",
+    title: "Bensin Pertamax",
+    categoryId: "Transportasi",
+    account: "Tunai / Cash",
+    amount: 100000,
+    type: "expense",
+    date: "2026-10-30",
+  },
+  {
+    id: "tx-4",
+    title: "Listrik PLN Pascabayar",
+    categoryId: "Tagihan & Utilitas",
+    account: "Bank Mandiri",
+    amount: 420000,
+    type: "expense",
+    date: "2026-10-28",
+  },
+];
+
+export const INITIAL_BUDGETS: BudgetInput[] = [
+  {
+    id: "bgt-1",
+    categoryId: "Makanan & Minuman",
+    amount: 1500000,
+    period: "monthly",
+    startDate: "2026-10-01",
+    endDate: "2026-10-31",
+    notifyThreshold: 80,
+  },
+  {
+    id: "bgt-2",
+    categoryId: "Transportasi",
+    amount: 400000,
+    period: "monthly",
+    startDate: "2026-10-01",
+    endDate: "2026-10-31",
+    notifyThreshold: 80,
+  },
+  {
+    id: "bgt-3",
+    categoryId: "Tagihan & Utilitas",
+    amount: 500000,
+    period: "monthly",
+    startDate: "2026-10-01",
+    endDate: "2026-10-31",
+    notifyThreshold: 80,
+  },
+];
+
+export const INITIAL_RECURRING: RecurringTransactionInput[] = [
+  {
+    id: "rec-1",
+    title: "Wi-Fi Fiber Rumah",
+    amount: 350000,
+    categoryId: "Tagihan & Utilitas",
+    accountId: "acc-1",
+    frequency: "monthly",
+    startDate: "2026-01-05",
+    nextDueDate: "2026-11-05",
+    isActive: true,
+    autoDeduct: true,
+  },
+  {
+    id: "rec-2",
+    title: "Langganan VPS Server",
+    amount: 180000,
+    categoryId: "Operasional",
+    accountId: "acc-1",
+    frequency: "monthly",
+    startDate: "2026-02-10",
+    nextDueDate: "2026-11-10",
+    isActive: true,
+    autoDeduct: false,
+  },
+  {
+    id: "rec-3",
+    title: "Iuran BPJS Kesehatan",
+    amount: 100000,
+    categoryId: "Asuransi & Kesehatan",
+    accountId: "acc-2",
+    frequency: "monthly",
+    startDate: "2026-01-15",
+    nextDueDate: "2026-11-15",
+    isActive: true,
+    autoDeduct: true,
+  },
+  {
+    id: "rec-4",
+    title: "Spotify Family",
+    amount: 86000,
+    categoryId: "Hiburan & Langganan",
+    accountId: "acc-3",
+    frequency: "monthly",
+    startDate: "2026-03-02",
+    nextDueDate: "2026-11-02",
+    isActive: true,
+    autoDeduct: false,
+  },
+];
+
+export const INITIAL_SAVINGS_GOALS: SavingsGoalInput[] = [
+  {
+    id: "sg-1",
+    name: "Dana Darurat",
+    targetAmount: 20000000,
+    currentAmount: 8500000,
+    targetDate: "2027-06-01",
+    category: "emergency_fund",
+    priority: "high",
+    accountId: "acc-1",
+    color: "#047857",
+    isCompleted: false,
+  },
+  {
+    id: "sg-2",
+    name: "Laptop Baru",
+    targetAmount: 12000000,
+    currentAmount: 3200000,
+    targetDate: "2027-01-15",
+    category: "purchase",
+    priority: "medium",
+    accountId: "acc-2",
+    color: "#92400e",
+    isCompleted: false,
+  },
+  {
+    id: "sg-3",
+    name: "Qurban 1448 H",
+    targetAmount: 3000000,
+    currentAmount: 1400000,
+    targetDate: "2027-05-01",
+    category: "sinking_fund",
+    priority: "high",
+    accountId: "acc-1",
+    color: "#1e3a5f",
+    isCompleted: false,
+  },
+  {
+    id: "sg-4",
+    name: "Kuliah Semester 6",
+    targetAmount: 5000000,
+    currentAmount: 5000000,
+    targetDate: "2027-02-01",
+    category: "education",
+    priority: "high",
+    accountId: "acc-1",
+    color: "#047857",
+    isCompleted: true,
+  },
+];
+
+export const INITIAL_DEBTS: DebtInput[] = [
+  {
+    id: "debt-1",
+    name: "Cicilan Laptop Lab",
+    type: "installment",
+    principalAmount: 6000000,
+    outstandingBalance: 3500000,
+    interestRateAnnual: 9.5,
+    monthlyPayment: 850000,
+    startDate: "2026-06-01",
+    dueDate: "2027-02-01",
+    accountId: "acc-1",
+    status: "active",
+    color: "#b45309",
+    note: "Cicilan 10 bulan Tokopedia",
+  },
+  {
+    id: "debt-2",
+    name: "Tagihan Kartu Kredit",
+    type: "credit_card",
+    principalAmount: 2000000,
+    outstandingBalance: 1250000,
+    interestRateAnnual: 18,
+    monthlyPayment: 450000,
+    startDate: "2026-09-01",
+    dueDate: "2026-12-15",
+    accountId: "acc-1",
+    status: "active",
+    color: "#b91c1c",
+    note: "BCA Visa Everyday Card",
+  },
+  {
+    id: "debt-3",
+    name: "Pinjaman Alat Jaringan",
+    type: "personal_loan",
+    principalAmount: 1000000,
+    outstandingBalance: 500000,
+    interestRateAnnual: 0,
+    monthlyPayment: 500000,
+    startDate: "2026-10-01",
+    dueDate: "2026-11-20",
+    accountId: "acc-2",
+    status: "active",
+    color: "#475569",
+    note: "Talangan switch Cisco hub",
+  },
+];

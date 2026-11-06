@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Sidebar from "@/components/Sidebar";
+import BottomNav from "@/components/BottomNav";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,10 +31,11 @@ export default function RootLayout({
           <div className="hidden lg:block">
             <Sidebar />
           </div>
-          <main className="w-full min-w-0">
+          <main className="w-full min-w-0 pb-20 lg:pb-0">
             {children}
           </main>
         </div>
+        <BottomNav />
       </body>
     </html>
   );
