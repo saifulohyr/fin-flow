@@ -1,5 +1,14 @@
 import { describe, it, expect } from "vitest";
-import { accounts, categories, transactions, budgets, recurringTransactions, savingsGoals } from "@/db/schema";
+import {
+  accounts,
+  categories,
+  transactions,
+  budgets,
+  recurringTransactions,
+  savingsGoals,
+  debts,
+  financialHealthSnapshots,
+} from "@/db/schema";
 import { getTableColumns } from "drizzle-orm";
 
 describe("Database schema definitions", () => {
@@ -53,5 +62,28 @@ describe("Database schema definitions", () => {
     expect(cols.targetDate).toBeDefined();
     expect(cols.category).toBeDefined();
     expect(cols.priority).toBeDefined();
+  });
+
+  it("defines debts table columns correctly", () => {
+    const cols = getTableColumns(debts);
+    expect(cols.id).toBeDefined();
+    expect(cols.name).toBeDefined();
+    expect(cols.principalAmount).toBeDefined();
+    expect(cols.outstandingBalance).toBeDefined();
+    expect(cols.monthlyPayment).toBeDefined();
+    expect(cols.interestRateAnnual).toBeDefined();
+  });
+
+  it("defines financialHealthSnapshots table columns correctly", () => {
+    const cols = getTableColumns(financialHealthSnapshots);
+    expect(cols.id).toBeDefined();
+    expect(cols.snapshotDate).toBeDefined();
+    expect(cols.overallScore).toBeDefined();
+    expect(cols.grade).toBeDefined();
+    expect(cols.emergencyFundRatioMonths).toBeDefined();
+    expect(cols.debtServiceRatioBps).toBeDefined();
+    expect(cols.savingsRateBps).toBeDefined();
+    expect(cols.solvencyRatioBps).toBeDefined();
+    expect(cols.budgetDisciplineBps).toBeDefined();
   });
 });

@@ -185,3 +185,30 @@ export const debtsRelations = relations(debts, ({ one }) => ({
     references: [accounts.id],
   }),
 }));
+
+// ── Financial Health Checkup & Snapshots ─────────────────────────────────────────
+export const healthGradeEnum = pgEnum("health_grade", [
+  "prime", // Skor 85–100 (Sangat Sehat)
+  "healthy", // Skor 70–84 (Sehat)
+  "caution", // Skor 50–69 (Perlu Perhatian)
+  "critical", // Skor < 50 (Kritis)
+]);
+
+export const financialHealthSnapshots = pgTable("financial_health_snapshots", {
+  id: text("id").primaryKey(),
+  snapshotDate: text("snapshot_date").notNull(), // YYYY-MM-DD
+  overallScore: integer("overall_score").notNull(), // 0–100
+  grade: healthGradeEnum("grade").notNull().default("healthy"),
+  emergencyFundRatioMonths: integer("emergency_fund_ratio_months").notNull(), // scaled x10 (e.g. 45 = 4.5 months)
+  debtServiceRatioBps: integer("debt_service_ratio_bps").notNull(), // basis points (2500 = 25.0%)
+  savingsRateBps: integer("savings_rate_bps").notNull(), // basis points (2000 = 20.0%)
+  solvencyRatioBps: integer("solvency_ratio_bps").notNull(), // basis points (6500 = 65.0%)
+  budgetDisciplineBps: integer("budget_discipline_bps").notNull(), // basis points (9200 = 92.0%)
+  monthlyIncome: integer("monthly_income").notNull().default(0),
+  monthlyExpenses: integer("monthly_expenses").notNull().default(0),
+  liquidAssets: integer("liquid_assets").notNull().default(0),
+  totalDebt: integer("total_debt").notNull().default(0),
+  runwayDays: integer("runway_days").notNull().default(0),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
