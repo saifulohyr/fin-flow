@@ -27,7 +27,7 @@ export default function RootLayout({
   return (
     <html lang="id" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body className="bg-[#FAF9F5] text-stone-900 antialiased">
-        <div className="min-h-screen grid lg:grid-cols-[220px_1fr]">
+        <div className="flex flex-col min-h-screen lg:grid lg:grid-cols-[220px_1fr]">
           <div className="hidden lg:block">
             <Sidebar />
           </div>
