@@ -3,6 +3,7 @@
  * Handles exact formatting, tabular numbers, and shorthand parsing ('35rb', '1.5jt', etc.)
  */
 
+/** Formats amount as full IDR currency string, e.g. Rp1.500.000 */
 export function formatIDR(amount: number): string {
   return new Intl.NumberFormat("id-ID", {
     style: "currency",
@@ -10,6 +11,27 @@ export function formatIDR(amount: number): string {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(amount);
+}
+
+/**
+ * Formats large IDR amounts in compact shorthand for UI labels.
+ * Examples: 1500000 → "1,5jt", 35000 → "35rb", 2500000000 → "2,5M"
+ * ponytail: Intl.NumberFormat compact not used — id-ID locale omits the IDR symbol in compact; manual logic is clearer.
+ */
+export function formatIDRCompact(amount: number): string {
+  if (amount >= 1_000_000_000) {
+    const val = amount / 1_000_000_000;
+    return `${val % 1 === 0 ? val : val.toFixed(1).replace(".", ",")}M`;
+  }
+  if (amount >= 1_000_000) {
+    const val = amount / 1_000_000;
+    return `${val % 1 === 0 ? val : val.toFixed(1).replace(".", ",")}jt`;
+  }
+  if (amount >= 1_000) {
+    const val = amount / 1_000;
+    return `${val % 1 === 0 ? val : val.toFixed(1).replace(".", ",")}rb`;
+  }
+  return String(amount);
 }
 
 export function formatPercentage(value: number): string {
