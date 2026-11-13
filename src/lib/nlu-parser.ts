@@ -13,34 +13,51 @@ const ACCOUNT_ALIASES: Record<string, string> = {
   bca: "BCA Tabungan",
   mandiri: "Bank Mandiri",
   bri: "Bank BRI",
+  bni: "Bank BNI",
   jago: "Bank Jago",
   gopay: "GoPay",
   ovo: "OVO",
   dana: "DANA",
   shopeepay: "ShopeePay",
+  linkaja: "LinkAja",
   cash: "Tunai / Cash",
   tunai: "Tunai / Cash",
 };
 
 const CATEGORY_KEYWORDS: Record<string, { category: string; type: "income" | "expense" }> = {
+  // Income
   gaji: { category: "Gaji & Upah", type: "income" },
   payroll: { category: "Gaji & Upah", type: "income" },
   freelance: { category: "Freelance", type: "income" },
   bonus: { category: "Bonus & Hadiah", type: "income" },
   transferan: { category: "Pemasukan Lain", type: "income" },
+  dividen: { category: "Investasi", type: "income" },
+  investasi: { category: "Investasi", type: "income" },
+  // Food & Drink
   makan: { category: "Makanan & Minuman", type: "expense" },
   kopi: { category: "Makanan & Minuman", type: "expense" },
   sarapan: { category: "Makanan & Minuman", type: "expense" },
   padang: { category: "Makanan & Minuman", type: "expense" },
+  minum: { category: "Makanan & Minuman", type: "expense" },
+  warteg: { category: "Makanan & Minuman", type: "expense" },
+  // Transport
   gojek: { category: "Transportasi", type: "expense" },
   grab: { category: "Transportasi", type: "expense" },
   bensin: { category: "Transportasi", type: "expense" },
   pertamax: { category: "Transportasi", type: "expense" },
+  parkir: { category: "Transportasi", type: "expense" },
+  tol: { category: "Transportasi", type: "expense" },
+  // Bills & Utilities
   listrik: { category: "Tagihan & Utilitas", type: "expense" },
   pln: { category: "Tagihan & Utilitas", type: "expense" },
   wifi: { category: "Tagihan & Utilitas", type: "expense" },
   indihome: { category: "Tagihan & Utilitas", type: "expense" },
   pulsa: { category: "Tagihan & Utilitas", type: "expense" },
+  pdam: { category: "Tagihan & Utilitas", type: "expense" },
+  // Lifestyle
+  laundry: { category: "Gaya Hidup", type: "expense" },
+  potong: { category: "Gaya Hidup", type: "expense" },
+  salon: { category: "Gaya Hidup", type: "expense" },
 };
 
 export function parseTransactionNLU(input: string): ParsedTransaction {
