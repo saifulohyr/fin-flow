@@ -80,3 +80,19 @@ export function calculateSpendingGrowth(previousTotal: number, currentTotal: num
   const growth = ((currentTotal - previousTotal) / previousTotal) * 100;
   return Number(growth.toFixed(1));
 }
+
+/**
+ * Returns spend totals per category for expense transactions.
+ * Useful for category breakdown charts and budget vs. actual comparisons.
+ * ponytail: in-memory reduce; replace with SQL GROUP BY when server-backed.
+ */
+export function getCategoryBreakdown(
+  transactions: { category: string; amount: number; type: string }[],
+): Record<string, number> {
+  const map: Record<string, number> = {};
+  for (const t of transactions) {
+    if (t.type !== "expense") continue;
+    map[t.category] = (map[t.category] ?? 0) + t.amount;
+  }
+  return map;
+}
